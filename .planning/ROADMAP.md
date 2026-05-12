@@ -30,7 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. `millis()` increments at 1ms resolution (SysTick LOAD=71999, HCLK source) and is readable in the debugger
   3. Serial terminal (115200 baud) shows `"millis: NNNN\r\n"` updating every second — confirming ST-Link USB COM port end-to-end
   4. Flashing succeeds via ST-Link without error; board runs autonomously after power cycle
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Project scaffold + SysTick millis() driver (DRV-01)
+- [ ] 01-02-PLAN.md — USART2 polling driver + main loop "millis: NNNN" output (DRV-02)
 
 ### Phase 2: ADC + Timer Hardware Trigger
 **Goal**: ADC1 samples PA0 at exactly 100Hz driven by TIM2 TRGO — no polling jitter — and streams raw 12-bit values over serial, proving the hardware trigger chain is correctly wired before any algorithm work begins
@@ -87,7 +90,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Firmware Scaffold + Peripheral Init | 0/TBD | Not started | - |
+| 1. Firmware Scaffold + Peripheral Init | 0/2 | Planned | - |
 | 2. ADC + Timer Hardware Trigger | 0/TBD | Not started | - |
 | 3. Algorithm Modules on Synthetic Data | 0/TBD | Not started | - |
 | 4. Full Integration + Analog Calibration | 0/TBD | Not started | - |
