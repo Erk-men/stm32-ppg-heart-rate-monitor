@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 1 context gathered
-last_updated: "2026-05-12T16:28:37.631Z"
-last_activity: 2026-05-12 -- Phase 01 planning complete
+last_updated: "2026-05-12T16:35:32.384Z"
+last_activity: 2026-05-12 -- Phase 01 execution started
 progress:
   total_phases: 5
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-12)
 
 **Core value:** Finger on sensor → stable, accurate BPM value visible on the serial monitor.
-**Current focus:** Phase 1 — Firmware Scaffold + Peripheral Init
+**Current focus:** Phase 01 — firmware-scaffold-peripheral-init
 
 ## Current Position
 
-Phase: 1 of 5 (Firmware Scaffold + Peripheral Init)
-Plan: 0 of TBD in current phase
-Status: Ready to execute
-Last activity: 2026-05-12 -- Phase 01 planning complete
+Phase: 01 (firmware-scaffold-peripheral-init) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 01
+Last activity: 2026-05-12 -- Phase 01 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
