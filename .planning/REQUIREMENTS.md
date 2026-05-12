@@ -56,20 +56,20 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DRV-01 | Phase 1 | Pending |
-| DRV-02 | Phase 1 | Pending |
-| DRV-03 | Phase 2 | Pending |
-| DRV-04 | Phase 2 | Pending |
-| SIG-01 | Phase 3 | Pending |
-| SIG-02 | Phase 3 | Pending |
-| SIG-03 | Phase 3 | Pending |
-| SIG-04 | Phase 3 | Pending |
-| SIG-05 | Phase 3 | Pending |
-| OUT-01 | Phase 4 | Pending |
-| OUT-02 | Phase 4 | Pending |
-| OUT-03 | Phase 4 | Pending |
-| OUT-04 | Phase 4 | Pending |
-| RPT-01 | Phase 5 | Pending |
+| DRV-01 | Phase 1 — Firmware Scaffold + Peripheral Init | Pending |
+| DRV-02 | Phase 1 — Firmware Scaffold + Peripheral Init | Pending |
+| DRV-03 | Phase 2 — ADC + Timer Hardware Trigger | Pending |
+| DRV-04 | Phase 2 — ADC + Timer Hardware Trigger | Pending |
+| SIG-01 | Phase 3 — Algorithm Modules on Synthetic Data | Pending |
+| SIG-02 | Phase 3 — Algorithm Modules on Synthetic Data | Pending |
+| SIG-03 | Phase 3 — Algorithm Modules on Synthetic Data | Pending |
+| SIG-04 | Phase 3 — Algorithm Modules on Synthetic Data | Pending |
+| SIG-05 | Phase 3 — Algorithm Modules on Synthetic Data | Pending |
+| OUT-01 | Phase 4 — Full Integration + Analog Calibration | Pending |
+| OUT-02 | Phase 4 — Full Integration + Analog Calibration | Pending |
+| OUT-03 | Phase 4 — Full Integration + Analog Calibration | Pending |
+| OUT-04 | Phase 4 — Full Integration + Analog Calibration | Pending |
+| RPT-01 | Phase 5 — Report Evidence + Polish | Pending |
 
 **Coverage:**
 - v1 requirements: 14 total
@@ -78,4 +78,4 @@
 
 ---
 *Requirements defined: 2026-05-12*
-*Last updated: 2026-05-12 after initial definition*
+*Last updated: 2026-05-12 after roadmap creation*
