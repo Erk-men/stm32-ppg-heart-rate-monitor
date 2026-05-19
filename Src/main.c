@@ -1,5 +1,6 @@
 #include "stm32f1xx.h"
 #include "systick.h"
+#include "usart.h"
 
 int main(void)
 {
@@ -7,6 +8,9 @@ int main(void)
      * explicit call here is a harmless no-op that keeps intent visible. */
     SystemInit();
     systick_init();
+    usart2_init();
+
+    uart_write_str("\r\n--- HeartRateSensor Phase 1 ---\r\n");
 
     volatile uint32_t last = 0;
 
@@ -16,8 +20,9 @@ int main(void)
         if (now - last >= 1000)
         {
             last = now;
-            /* placeholder for Plan 02 uart_write — breakpoint anchor */
-            __NOP();
+            uart_write_str("millis: ");
+            uart_write_u32(now);
+            uart_write_str("\r\n");
         }
     }
 }
