@@ -66,7 +66,7 @@ void adc_init(void)
  * Reading ADC1->DR clears the EOC flag automatically on F0 (prevents runaway ISR).
  * The 0x0FFF mask captures only the 12-bit result (mitigates T-02-01: reserved bit bleed).
  */
-void ADC1_IRQHandler(void)
+void ADC_IRQHandler(void)
 {
     if (ADC1->ISR & ADC_ISR_EOC) {
         g_adc_sample = (uint16_t)(ADC1->DR & 0x0FFF);  /* reading DR clears EOC */
