@@ -1,5 +1,6 @@
 #include "stm32f1xx.h"
 #include "usart.h"
+#include <stddef.h>
 
 /*
  * usart2_init — configure PA2/PA3 GPIO and USART2 for 115200 8N1 polling TX.
