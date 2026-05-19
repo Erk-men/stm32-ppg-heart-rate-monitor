@@ -1,99 +1,79 @@
-#include "stm32f1xx.h"
+#include "stm32f0xx.h"
 #include "usart.h"
 #include <stddef.h>
 
 /*
  * usart2_init — configure PA2/PA3 GPIO and USART2 for 115200 8N1 polling TX.
  *
- * Clock tree (from CLAUDE.md §RCC Clock Configuration):
- *   HCLK = 72 MHz (HSE 8 MHz x PLL9)
- *   APB1 prescaler = /2  -> PCLK1 = 36 MHz  -> USART2 clock = 36 MHz
- *   APB2 prescaler = /1  -> PCLK2 = 72 MHz  -> GPIOA clock = 72 MHz
+ * STM32F070xB clock tree (system_stm32f0xx.c):
+ *   SYSCLK = PCLK = 48 MHz (HSE 8MHz × PLL6, APB /1)
+ *   BRR = 48 000 000 / 115 200 = 416.67 → 0x1A1 (417)
  *
- * BRR = 0x139 (313 decimal) = 36 000 000 / 115200 (RM0008 §27.3.4, CLAUDE.md §USART2)
+ * PA2 (USART2_TX): MODER=10 (AF), AF1 in AFRL bits[11:8]
+ * PA3 (USART2_RX): MODER=10 (AF), AF1 in AFRL bits[15:12]
  *
- * PA2 (TX): CNF=10 (AF push-pull), MODE=11 (50 MHz output) -> nibble 0xB at CRL[11:8]
- * PA3 (RX): CNF=01 (floating input), MODE=00 (input)       -> nibble 0x4 at CRL[15:12]
- *
- * TC poll: omitted per-byte to avoid ~87µs/byte overhead; single TC poll added after
- * the last byte of uart_write_str/uart_write_u32 is not implemented here — TXE-only
- * polling is sufficient for Phase 1 correctness at 1 Hz output rate.
+ * F0 differences from F1:
+ *   GPIOA clock: RCC->AHBENR (not APB2ENR)
+ *   GPIO config: MODER/AFR (not CRL/CRH)
+ *   USART status: ISR (not SR); data: TDR (not DR)
  */
 void usart2_init(void)
 {
-    /* 1. Enable GPIOA clock (GPIOA is on APB2 — F103 gotcha; NOT AHB like F4) */
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+    /* 1. Enable GPIOA clock — F0 GPIO is on AHB (not APB2 like F1) */
+    RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
 
-    /* 2. Enable USART2 clock (USART2 is on APB1, PCLK1 = 36 MHz) */
+    /* 2. Enable USART2 clock — still on APB1 */
     RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 
-    /* 3. Configure PA2 (TX): AF push-pull 50 MHz — nibble 0xB at CRL bits [11:8]
-     *    CNF[1:0] = 10 (AF push-pull), MODE[1:0] = 11 (50 MHz output)
-     *    Clear then set — read-modify-write to preserve other pins in CRL */
-    GPIOA->CRL &= ~(GPIO_CRL_CNF2 | GPIO_CRL_MODE2);
-    GPIOA->CRL |=  (0x0B << 8);
+    /* 3. PA2: alternate function mode (MODER bits [5:4] = 10) */
+    GPIOA->MODER &= ~GPIO_MODER_MODER2;
+    GPIOA->MODER |=  GPIO_MODER_MODER2_1;   /* 10 = AF */
 
-    /* 4. Configure PA3 (RX): floating input — nibble 0x4 at CRL bits [15:12]
-     *    CNF[1:0] = 01 (floating input), MODE[1:0] = 00 (input)  */
-    GPIOA->CRL &= ~(GPIO_CRL_CNF3 | GPIO_CRL_MODE3);
-    GPIOA->CRL |=  (0x04 << 12);
+    /* 4. PA3: alternate function mode (MODER bits [7:6] = 10) */
+    GPIOA->MODER &= ~GPIO_MODER_MODER3;
+    GPIOA->MODER |=  GPIO_MODER_MODER3_1;   /* 10 = AF */
 
-    /* 5. Set baud rate: 115200 at PCLK1=36 MHz -> BRR=0x139 (313 decimal)
-     *    Value from CLAUDE.md §USART2; do NOT compute at runtime. */
-    USART2->BRR = 0x139;
+    /* 5. Set AF1 (USART2) for PA2 and PA3 in AFRL
+     *    PA2: AFRL bits [11:8] = 0001
+     *    PA3: AFRL bits [15:12] = 0001 */
+    GPIOA->AFR[0] &= ~(0xFFUL << 8);
+    GPIOA->AFR[0] |=  (0x11UL << 8);   /* AF1 for PA2, AF1 for PA3 */
 
-    /* 6. Enable USART2 and TX (8N1 defaults apply; no RX enable, no interrupts) */
+    /* 6. BRR = 0x1A1 (417) → 115200 baud at PCLK=48MHz */
+    USART2->BRR = 0x1A1;
+
+    /* 7. Enable USART2 with TX (8N1 defaults, no RX enable, no interrupts) */
     USART2->CR1 = USART_CR1_UE | USART_CR1_TE;
 }
 
-/*
- * uart_write_str — transmit a null-terminated string over USART2.
- * Polls TXE (SR bit 7) before each byte write.
- * NULL-safe: returns immediately if s == NULL (bare-metal nullptr deref = HardFault).
- */
 void uart_write_str(const char *s)
 {
     if (s == NULL)
         return;
-
     while (*s)
     {
-        while (!(USART2->SR & USART_SR_TXE))
+        while (!(USART2->ISR & USART_ISR_TXE))
             ;
-        USART2->DR = (uint8_t)*s++;
+        USART2->TDR = (uint8_t)*s++;
     }
 }
 
-/*
- * uart_write_u32 — emit decimal ASCII representation of n, no leading zeros.
- * Special-case: n==0 emits exactly "0".
- * Uses a fixed 10-char stack buffer (max 10 digits for UINT32_MAX = 4294967295).
- * No stdlib formatting functions used.
- */
 void uart_write_u32(uint32_t n)
 {
     if (n == 0)
     {
-        while (!(USART2->SR & USART_SR_TXE))
+        while (!(USART2->ISR & USART_ISR_TXE))
             ;
-        USART2->DR = '0';
+        USART2->TDR = '0';
         return;
     }
-
     char buf[10];
     int i = 0;
-
-    while (n > 0)
-    {
-        buf[i++] = '0' + (char)(n % 10);
-        n /= 10;
-    }
-
-    /* buf holds digits in reverse order; emit most-significant first */
+    while (n > 0) { buf[i++] = '0' + (char)(n % 10); n /= 10; }
     while (i > 0)
     {
-        while (!(USART2->SR & USART_SR_TXE))
+        while (!(USART2->ISR & USART_ISR_TXE))
             ;
-        USART2->DR = (uint8_t)buf[--i];
+        USART2->TDR = (uint8_t)buf[--i];
     }
 }
