@@ -7,7 +7,7 @@
  * Trigger chain: TIM3 TRGO (100 Hz) -> ADC1 EXTSEL=011, EXTEN=01 (rising edge)
  * Clock:         HSI14 async RC oscillator (14 MHz), CKMODE=00 (reset default)
  * Channel:       ADC_IN0 = PA0 (analog mode)
- * ISR:           ADC1_IRQHandler fires on EOC, stores result in g_adc_sample
+ * ISR:           ADC_IRQHandler fires on EOC, stores result in g_adc_sample
  *
  * Initialization order (critical -- see pitfalls in 02-RESEARCH.md):
  *   PA0 analog -> ADC clock -> HSI14 start -> ADCAL (ADEN must be 0) ->
@@ -61,7 +61,7 @@ void adc_init(void)
 }
 
 /*
- * ADC1_IRQHandler -- fires on EOC (end of conversion) at 100 Hz.
+ * ADC_IRQHandler -- fires on EOC (end of conversion) at 100 Hz.
  *
  * Reading ADC1->DR clears the EOC flag automatically on F0 (prevents runaway ISR).
  * The 0x0FFF mask captures only the 12-bit result (mitigates T-02-01: reserved bit bleed).
