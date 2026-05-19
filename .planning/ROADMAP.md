@@ -48,7 +48,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 02-01-PLAN.md — TIM3 100Hz TRGO driver + ADC1 hardware-triggered ISR driver (DRV-03, DRV-04)
-- [ ] 02-02-PLAN.md — Wire drivers into main.c, stream "adc: NNNN\r\n" at 100Hz, human-verify range + rate (DRV-03, DRV-04)
+- [x] 02-02-PLAN.md — Wire drivers into main.c, stream "adc: NNNN\r\n" at 100Hz, human-verify range + rate (DRV-03, DRV-04)
 
 ### Phase 3: Algorithm Modules on Synthetic Data
 **Goal**: All five signal-processing modules — moving average, adaptive threshold peak detector, refractory suppression, BPM bounds check, and rolling average — are implemented as pure-C functions and produce stable 60 BPM output from a 100-step synthetic sine table in main.c, proving algorithmic correctness before any real signal is involved
