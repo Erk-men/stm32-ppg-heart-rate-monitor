@@ -40,7 +40,7 @@ void usart2_init(void)
     GPIOA->AFR[0] |=  (0x11UL << 8);   /* AF1 for PA2, AF1 for PA3 */
 
     /* 6. BRR = 0x1A1 (417) → 115200 baud at PCLK=48MHz */
-    USART2->BRR = 0x1A1;
+    USART2->BRR = 0x45;
 
     /* 7. Enable USART2 with TX (8N1 defaults, no RX enable, no interrupts) */
     USART2->CR1 = USART_CR1_UE | USART_CR1_TE;
