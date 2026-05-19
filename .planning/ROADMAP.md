@@ -47,7 +47,7 @@ Plans:
   4. ADC calibration (single ADCAL step) completes at startup with no hang
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — TIM3 100Hz TRGO driver + ADC1 hardware-triggered ISR driver (DRV-03, DRV-04)
+- [x] 02-01-PLAN.md — TIM3 100Hz TRGO driver + ADC1 hardware-triggered ISR driver (DRV-03, DRV-04)
 - [ ] 02-02-PLAN.md — Wire drivers into main.c, stream "adc: NNNN\r\n" at 100Hz, human-verify range + rate (DRV-03, DRV-04)
 
 ### Phase 3: Algorithm Modules on Synthetic Data
