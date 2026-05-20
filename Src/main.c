@@ -55,11 +55,11 @@ int main(void)
      * Call order: systick_init -> usart2_init -> tim3_init -> adc_init is mandatory. */
     usart2_init();
 
-    /* Start TIM3: TRGO begins firing at 100 Hz immediately after this call. */
+#ifndef SYNTHETIC_TEST
+    /* TIM3 and ADC only needed for real hardware — synthetic test uses millis() only. */
     tim3_init();
-
-    /* Calibrate and arm ADC1: first conversion fires on next TIM3 TRGO pulse. */
     adc_init();
+#endif
 
     /* Zero algorithm state before first sample arrives. */
     algorithm_init();

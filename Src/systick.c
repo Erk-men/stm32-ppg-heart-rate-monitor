@@ -6,8 +6,8 @@ static volatile uint32_t s_ticks = 0;
 
 void systick_init(void)
 {
-    /* LOAD = 47999 → (48,000,000 Hz / 1000 Hz) - 1 = 1 ms at HCLK=48MHz */
-    SysTick_Config(47999);
+    /* LOAD = 7999 → (8,000,000 Hz / 1000 Hz) - 1 = 1 ms at HCLK=8MHz */
+    SysTick_Config(7999);
 
     /* Raise SysTick to highest priority per CLAUDE.md §Interrupt Priority Plan */
     NVIC_SetPriority(SysTick_IRQn, 0);
