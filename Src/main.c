@@ -1,5 +1,9 @@
+#ifndef SYNTHETIC_TEST
 #define SYNTHETIC_TEST
+#endif
+#ifndef DEBUG_STATE
 #define DEBUG_STATE
+#endif
 #include "stm32f0xx.h"
 #include "systick.h"
 #include "usart.h"
@@ -72,7 +76,8 @@ int main(void)
         {
             s_last_sample_ms = now;
             algorithm_process(sine_table[s_table_idx]);
-            s_table_idx = (s_table_idx + 1 >= 100) ? 0 : s_table_idx + 1;
+            s_table_idx++;
+            if (s_table_idx >= 100) s_table_idx = 0;
         }
 #else
         if (g_adc_ready)
