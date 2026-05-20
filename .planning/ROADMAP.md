@@ -75,7 +75,10 @@ Plans:
   2. `CALIBRATION_MODE` printout at startup shows ADC min/max/amplitude values confirming LM358 signal is usable (amplitude > FINGER_MIN_AMPLITUDE counts); if LM358 is saturated at 3.3V, op-amp supply switched to 5V and amplitude re-verified
   3. Removing the finger causes `"--\r\n"` within 2 seconds and adaptive threshold resets to initial value so re-acquisition succeeds on next finger placement
   4. `DEBUG_VERBOSE` serial output shows labeled `RAW / FILT / THR / AMP / STATE` fields; at least one threshold-crossing event is visible in the capture
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — Live ADC integration + CALIBRATION_MODE 5s startup measurement (OUT-01, OUT-03)
+- [ ] 04-02-PLAN.md — No-finger detection + threshold reset + DEBUG_VERBOSE per-sample dump (OUT-02, OUT-04)
 
 ### Phase 5: Report Evidence + Polish
 **Goal**: All deliverable evidence is collected, formatted, and assembled into the technical report — circuit schematic, register configuration table, algorithm flowchart, annotated serial screenshots, and a 60-second BPM accuracy table
@@ -99,5 +102,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Firmware Scaffold + Peripheral Init | 0/2 | Planned | - |
 | 2. ADC + Timer Hardware Trigger | 0/2 | Planned | - |
 | 3. Algorithm Modules on Synthetic Data | 0/2 | Planned | - |
-| 4. Full Integration + Analog Calibration | 0/TBD | Not started | - |
+| 4. Full Integration + Analog Calibration | 0/2 | Planned | - |
 | 5. Report Evidence + Polish | 0/TBD | Not started | - |
+</content>
+</invoke>
