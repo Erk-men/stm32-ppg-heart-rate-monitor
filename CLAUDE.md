@@ -3,7 +3,7 @@
 
 **HeartRateSensor**
 
-A bare-metal heart rate monitor built on the STM32 Nucleo-F103RB (ARM Cortex-M3) for an Advanced Microprocessors university course. It uses reflective photoplethysmography (PPG) — an IR LED and BPW34 photodiode with an LM358 analog signal chain — to measure pulse and output BPM values over USART2 serial. Deliverable is working hardware + bare-metal C source code + a technical report.
+A bare-metal heart rate monitor built on the STM32 Nucleo-F070RB (ARM Cortex-M0) for an Advanced Microprocessors university course. It uses reflective photoplethysmography (PPG) — an IR LED and BPW34 photodiode with an LM358 analog signal chain — to measure pulse and output BPM values over USART2 serial. Deliverable is working hardware + bare-metal C source code + a technical report.
 
 **Core Value:** Finger on sensor → stable, accurate BPM value visible on the serial monitor.
 
@@ -29,92 +29,105 @@ A bare-metal heart rate monitor built on the STM32 Nucleo-F103RB (ARM Cortex-M3)
 | CMSIS 5 headers | shipped inside CubeIDE device pack | Device + core headers |
 | STM32CubeMX (.ioc) | Integrated in CubeIDE | Generates clock tree + linker script only |
 ## CMSIS Header Dependency Tree
-#define STM32F103xB
-#include "stm32f1xx.h"
+#define STM32F070xB
+#include "stm32f0xx.h"
 ## RCC Clock Configuration
 ### Clock tree for this project
-### Register sequence (RM0008 §6.3)
+- SYSCLK = 48 MHz (HSE 8 MHz × PLLMUL6, or HSI 8 MHz used as diagnostic fallback)
+- HCLK = 48 MHz (AHB prescaler /1)
+- PCLK = 48 MHz (single APB on F070, prescaler /1)
+- TIM3 clock = 48 MHz
 ### Peripheral clock enables (must precede any register write to that peripheral)
+- GPIOA: RCC->AHBENR |= RCC_AHBENR_GPIOAEN (GPIO is on AHB on F0, not APB2)
+- USART2: RCC->APB1ENR |= RCC_APB1ENR_USART2EN
+- TIM3: RCC->APB1ENR |= RCC_APB1ENR_TIM3EN
+- ADC1: RCC->APB2ENR |= RCC_APB2ENR_ADCEN
 ## GPIO Configuration (CMSIS, no HAL)
-| Pin | Function | CRL/CRH bits | CNF | MODE | Note |
-|-----|----------|--------------|-----|------|------|
-| PA0 | ADC1_IN0 | CRL bits [3:0] | 00 (analog) | 00 (input) | analog input mode |
-| PA2 | USART2_TX | CRL bits [11:8] | 10 (AF push-pull) | 11 (50 MHz) | |
-| PA3 | USART2_RX | CRL bits [15:12] | 01 (float input) | 00 (input) | |
+| Pin | Function | Register | Field | Value | Note |
+|-----|----------|----------|-------|-------|------|
+| PA0 | ADC_IN0 | GPIOA->MODER | MODER0 [1:0] | 11 (analog) | PUPDR default 00 |
+| PA2 | USART2_TX | GPIOA->MODER | MODER2 [5:4] | 10 (AF) | AFR[0] bits [11:8] = 0001 (AF1) |
+| PA3 | USART2_RX | GPIOA->MODER | MODER3 [7:6] | 10 (AF) | AFR[0] bits [15:12] = 0001 (AF1) |
 ## ADC1 — Bare-Metal Register Configuration
-### Key registers (RM0008 §11)
+### Key registers (RM0091)
 | Register | Purpose |
 |----------|---------|
-| ADC1->CR1 | Mode, interrupt enable, resolution control |
-| ADC1->CR2 | ADON, external trigger source, trigger enable, start |
-| ADC1->SQR3 | Channel sequence for regular group (first conversion) |
-| ADC1->SMPR2 | Sample time for channels 0–9 |
-| ADC1->SR | Status: EOC (bit 1), STRT (bit 4) |
-| ADC1->DR | 12-bit result (bits [11:0]) |
-### CR1 configuration
-### CR2 configuration
-| EXTSEL[2:0] | F103 trigger source (regular group) |
-|-------------|--------------------------------------|
-| 000 | TIM1_CC1 |
-| 001 | TIM1_CC2 |
-| 010 | TIM1_CC3 |
-| 011 | **TIM2_TRGO** ← use this |
-| 100 | TIM2_CC2 |
-| 101 | TIM3_TRGO |
-| 110 | TIM3_CC1 |
-| 111 | EXTI11 / TIM8_TRGO (software trigger when SWSTART used) |
-### SQR3 — channel selection
-### SMPR2 — sample time
+| ADC1->CFGR1 | External trigger source (EXTSEL), trigger edge (EXTEN), overrun mode |
+| ADC1->SMPR | Sample time for all channels (SMP[2:0]) |
+| ADC1->CHSELR | Channel selection bitmask |
+| ADC1->IER | Interrupt enable: EOCIE (bit 2) |
+| ADC1->ISR | Status: EOC (bit 2), ADRDY (bit 0) |
+| ADC1->DR | 12-bit result (bits [11:0]) — reading clears EOC |
+| ADC1->CR | ADEN, ADSTART, ADCAL, ADSTP |
+### CFGR1 — external trigger
+| EXTSEL[2:0] | F070 trigger source |
+|-------------|---------------------|
+| 000 | TIM1_TRGO |
+| 001 | TIM1_CC4 |
+| 010 | TIM2_TRGO |
+| **011** | **TIM3_TRGO ← use this** |
+| 100 | TIM15_TRGO |
+| 101–111 | reserved |
+### ADC calibration sequence (mandatory on F0)
+ADC1->CR |= ADC_CR_ADCAL; while (ADC1->CR & ADC_CR_ADCAL); — must run with ADEN=0
 ### ADC1 interrupt
-## TIM2 — 100 Hz Hardware Trigger for ADC
-### Calculation (RM0008 §14)
+IRQ name: ADC1_IRQn (F070 has no ADC2; single vector, no shared-vector check needed)
+## TIM3 — 100 Hz Hardware Trigger for ADC
+### Calculation
+- TIM3 clock = PCLK = 48 MHz (single APB, no doubling on F070)
+- PSC = 479, ARR = 999 → period = (479+1)×(999+1)/48000000 = 10 ms = 100 Hz
 ### Register sequence
 | MMS[2:0] | TRGO event |
 |----------|-----------|
 | 000 | Reset |
 | 001 | Enable |
 | **010** | **Update (UEV) ← use this** |
-| 011 | Compare Pulse (OC1) |
-| 100–111 | OC1/2/3/4REF |
+| 011–111 | OC1/2/3/4REF |
 ## USART2 — 115200 Baud Serial Output
-### Baud rate calculation (RM0008 §27.3.4)
-| Bit | Name | Meaning |
-|-----|------|---------|
-| 5 | RXNE | RX Not Empty — data ready to read |
-| 6 | TC | Transmission Complete |
-| 7 | TXE | TX Data Register Empty — safe to write DR |
+### Baud rate calculation (RM0091 §25)
+- BRR = PCLK / baud = 48,000,000 / 115,200 = 416.67 → **0x1A1 (417)**
+### Status/data registers (F0 differs from F1)
+| Register | Bit | Name | Meaning |
+|----------|-----|------|---------|
+| USART2->ISR | 5 | RXNE | RX Not Empty |
+| USART2->ISR | 6 | TC | Transmission Complete |
+| USART2->ISR | 7 | TXE | TX Data Register Empty — safe to write TDR |
+| USART2->TDR | — | — | Transmit data register (write byte here, not DR) |
 ## SysTick — 1 ms millis()
+- SysTick_Config(47999) → (48,000,000 / 1000) - 1 = 47999 at HCLK=48MHz
+- Single 32-bit aligned LDR is atomic on Cortex-M0 — no IRQ disable needed to read millis()
 ## Interrupt Priority Plan
 | IRQ | Priority | Rationale |
 |-----|----------|-----------|
 | SysTick | 0 (highest) | millis() must never be delayed |
-| ADC1_2_IRQn | 1 | sample ISR must complete before next TIM2 trigger at 10ms |
+| ADC1_IRQn | 1 | sample ISR must complete before next TIM3 trigger at 10ms |
 | USART2 (if using IRQ TX) | 2 | output is best-effort |
 ## Alternatives Considered
 | Category | Recommended | Alternative | Why Not |
 |----------|-------------|-------------|---------|
-| ADC trigger | TIM2 TRGO hardware trigger | Software polling with SysTick | Software trigger introduces ISR latency jitter; at 100Hz the peak-interval timing needs sub-millisecond accuracy |
-| ADC result handling | EOC interrupt (ADC1_2_IRQn) | DMA channel 1 | DMA adds setup complexity; single-channel 100Hz is trivially handled by ISR with no CPU saturation (<1% duty cycle per ISR) |
-| USART TX | Polling (TXE flag) | Interrupt-driven TX ring buffer | BPM output is ~15 chars at ~1 Hz — polling completes in <150µs; ring buffer overhead is not justified |
-| millis() source | SysTick | TIM3 or TIM4 | SysTick is a dedicated OS tick timer; saving TIM3/TIM4 for potential future use |
-| Clock source | HSE 8MHz × PLL9 = 72MHz | HSI 8MHz × PLL9 = 72MHz | HSI is ±1% accurate; HSE uses the Nucleo onboard crystal at ±50ppm — more accurate baud rate and ADC timing |
-## F103-Specific Gotchas Summary
+| ADC trigger | TIM3 TRGO hardware trigger | Software polling with SysTick | Software trigger introduces ISR latency jitter; at 100Hz the peak-interval timing needs sub-millisecond accuracy |
+| ADC result handling | EOC interrupt (ADC1_IRQn) | DMA channel 1 | DMA adds setup complexity; single-channel 100Hz is trivially handled by ISR with no CPU saturation (<1% duty cycle per ISR) |
+| USART TX | Polling (TXE flag on ISR) | Interrupt-driven TX ring buffer | BPM output is ~15 chars at ~1 Hz — polling completes in <150µs; ring buffer overhead is not justified |
+| millis() source | SysTick | TIM14 or TIM16 | SysTick is a dedicated core timer; saving TIM14/TIM16 for potential future use |
+| Clock source | HSI 8MHz (SystemInit stub, 48MHz via PLL in future) | HSE 8MHz × PLL6 = 48MHz | SystemInit is currently a stub; HSI is sufficient for lab demo. Use HSE for final hardware for tighter baud accuracy. |
+## F070-Specific Gotchas Summary
 | Gotcha | Detail |
 |--------|--------|
-| ADC calibration mandatory | Run RSTCAL + CAL sequence after every ADON. Not required on F4/F7. Skipping gives random DC offset. |
-| EXTSEL encoding differs from F4 | TIM2_TRGO = 011 on F103; on F4 ADC the EXTSEL map is completely different. Never copy F4 ADC examples. |
-| No ADC resolution bits in CR1 | F103 ADC is always 12-bit. Bits [25:24] of CR1 are reserved. F4 code that sets RES[1:0] is silently incompatible. |
-| Timer clock doubling on APB | When APB1 prescaler ≠ 1 (ours = /2), TIM2 clock = 2×PCLK1 = 72 MHz, not 36 MHz. This affects PSC/ARR calculation. |
-| GPIOA clock on APB2, not AHB | STM32F1 GPIO is on APB2 (RCC_APB2ENR). STM32F4 GPIO is on AHB1 (RCC_AHB1ENR). Wrong enable = GPIO stays input. |
-| CRL/CRH GPIO config (not MODER) | F1 uses 4-bit packed CNF+MODE fields in CRL/CRH. F4 uses MODER/OTYPER/OSPEEDR/PUPDR. Code is not portable. |
-| ADC1_2_IRQn shared vector | ADC1 and ADC2 share one interrupt vector (ADC1_2_IRQn). Check ADC1->SR->EOC inside the ISR. |
-| USART2 BRR for 36MHz PCLK1 | BRR = 0x139 (313). Many online examples assume 72MHz APB or 8MHz HSI — use wrong BRR values for this project. |
+| ADC calibration mandatory | Run ADCAL sequence (ADEN=0 → ADCAL=1 → wait) before first conversion. Skipping gives random DC offset. |
+| HSI14 dedicated ADC clock | F070 ADC has its own 14 MHz RC oscillator (HSI14). Enable via RCC->CR2 |= RCC_CR2_HSI14ON and wait HSI14RDY before ADEN. |
+| Single APB — no timer clock doubling | F070 has one APB (not APB1+APB2). TIM3 clock = PCLK = 48 MHz. No ×2 multiplier. PSC/ARR calculated against 48 MHz directly. |
+| GPIO on AHB, not APB2 | F0 GPIO clock: RCC->AHBENR |= RCC_AHBENR_GPIOAEN. F1 uses APB2ENR, F4 uses AHB1ENR. Wrong bus = GPIO stays input. |
+| MODER/AFR GPIO config (not CRL/CRH) | F0 uses MODER[1:0] (2-bit mode) + AFR[0]/AFR[1] (4-bit AF select). F1 uses 4-bit CNF+MODE in CRL/CRH. Code is not portable. |
+| USART registers: ISR/TDR not SR/DR | F0 USART uses ISR (status) and TDR (transmit data). F1 uses SR and DR. Mixing them compiles but writes wrong registers. |
+| ADC1_IRQn — no shared vector | F070 has only ADC1; interrupt vector is ADC1_IRQn. F103 uses ADC1_2_IRQn (shared with ADC2). No SR->EOC check needed. |
+| USART2 BRR for 48MHz PCLK | BRR = 0x1A1 (417). Many online examples assume 72MHz (F103) or 8MHz HSI — produce wrong baud rates for this project. |
+| No FPU on Cortex-M0 | F070 is Cortex-M0, no hardware FPU. All arithmetic must be integer-only. float/double silently use soft-float library (large, slow). |
 ## Sources
-- STM32F103xB Reference Manual RM0008 Rev 21 (ST Microelectronics) — primary register reference. Sections: §6 (RCC), §11 (ADC), §14 (TIM2), §27 (USART), §3 (Flash ACR), §9 (GPIO)
-- STM32F103RBT6 Datasheet DS5319 — pin multiplexing table, ADC channel mapping
-- CMSIS 5 core_cm3.h — SysTick_Config(), NVIC_SetPriority(), NVIC_EnableIRQ() signatures
-- Nucleo-F103RB User Manual UM1724 — PA2/PA3 routed to ST-Link virtual COM, 8MHz HSE crystal confirmed
-- Confidence: HIGH — RM0008 register map is fixed silicon; no version ambiguity for STM32F103.
+- STM32F070xB Reference Manual RM0091 (ST Microelectronics) — primary register reference. Sections: §6 (RCC), §12 (ADC), §17 (TIM3), §25 (USART), §9 (GPIO)
+- STM32F070RB Datasheet — pin multiplexing table, ADC channel mapping
+- CMSIS 5 core_cm0.h — SysTick_Config(), NVIC_SetPriority(), NVIC_EnableIRQ() signatures
+- Nucleo-F070RB User Manual — PA2/PA3 routed to ST-Link virtual COM, HSE crystal confirmed
+- Confidence: HIGH — RM0091 register map is fixed silicon; no version ambiguity for STM32F070.
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
