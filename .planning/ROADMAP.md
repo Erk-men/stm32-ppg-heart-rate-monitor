@@ -63,7 +63,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 03-01-PLAN.md — Algorithm contract + SIG-01 moving average + synthetic sine table end-to-end slice
-- [ ] 03-02-PLAN.md — Adaptive-threshold state machine + refractory + BPM bounds + rolling average (SIG-02..05)
+- [x] 03-02-PLAN.md — Adaptive-threshold state machine + refractory + BPM bounds + rolling average (SIG-02..05)
 
 ### Phase 4: Full Integration + Analog Calibration
 **Goal**: The live ADC sample stream replaces the synthetic sine table; the full firmware stack runs on real LM358 PPG signal; all threshold constants are empirically measured and locked in; stable BPM output is confirmed from a real finger
