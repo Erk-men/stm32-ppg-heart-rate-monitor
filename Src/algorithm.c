@@ -16,7 +16,7 @@ typedef enum { IDLE, RISING, PEAK_HOLD, FALLING, REFRACTORY } peak_state_t;
 static peak_state_t s_state          = IDLE;
 static uint16_t     s_threshold      = 1200; /* initial ~60% of midpoint; updated after each peak */
 static uint16_t     s_peak_val       = 0;    /* maximum filtered value seen in RISING */
-static uint32_t     s_refractory_end = 0;    /* millis() value when refractory ends */
+static uint32_t     s_refractory_start = 0;  /* millis() value when refractory began */
 
 /* --- BPM calculation (SIG-04, SIG-05) --- */
 static uint32_t  s_last_peak_ms  = 0;
@@ -40,7 +40,7 @@ void algorithm_init(void)
     s_state          = IDLE;
     s_threshold      = 1200;
     s_peak_val       = 0;
-    s_refractory_end = 0;
+    s_refractory_start = 0;
 
     /* Reset BPM rolling average */
     for (uint8_t i = 0; i < 5; i++) s_bpm_buf[i] = 0;
@@ -84,33 +84,35 @@ void algorithm_process(uint16_t sample)
             {
                 s_peak_val = filtered;
             }
-            else
+            else if (s_peak_val - filtered >= 20)   /* hysteresis: 20 counts ~ 0.5% of 4095 */
             {
-                /* Signal stopped rising — peak has crested; register the beat */
+                /* Signal has fallen enough below peak — peak has crested; register the beat */
                 next_state = PEAK_HOLD;
             }
             break;
 
         case PEAK_HOLD:
         {
+            uint32_t now = millis();   /* single atomic snapshot for the whole case */
+
             /* --- Register the beat --- */
 
             /* SIG-02: update adaptive threshold = last_peak * 3 / 5 (integer multiply before divide) */
             s_threshold = (uint16_t)((uint32_t)s_peak_val * 3 / 5);
 
-            /* SIG-03: set refractory end time to suppress dicrotic notch */
-            s_refractory_end = millis() + REFRACTORY_MS;
+            /* SIG-03: record refractory start time to suppress dicrotic notch */
+            s_refractory_start = now;
 
             /* SIG-04 + SIG-05: BPM calculation and rolling average */
             if (s_last_peak_ms == 0)
             {
                 /* First beat ever — no interval exists yet; record timestamp and skip */
-                s_last_peak_ms = millis();
+                s_last_peak_ms = now;
             }
             else
             {
-                uint32_t interval_ms = millis() - s_last_peak_ms;
-                s_last_peak_ms = millis();
+                uint32_t interval_ms = now - s_last_peak_ms;
+                s_last_peak_ms = now;
 
                 if (interval_ms != 0)
                 {
@@ -143,7 +145,7 @@ void algorithm_process(uint16_t sample)
 
         case REFRACTORY:
             /* Ignore all samples until refractory window expires — suppresses dicrotic notch */
-            if (millis() >= s_refractory_end)
+            if ((millis() - s_refractory_start) >= REFRACTORY_MS)
             {
                 next_state = FALLING;
             }
