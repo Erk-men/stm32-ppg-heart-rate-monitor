@@ -62,7 +62,7 @@ Plans:
   4. BPM values outside 40–200 are silently rejected and do not corrupt the 5-reading rolling average
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md — Algorithm contract + SIG-01 moving average + synthetic sine table end-to-end slice
+- [x] 03-01-PLAN.md — Algorithm contract + SIG-01 moving average + synthetic sine table end-to-end slice
 - [ ] 03-02-PLAN.md — Adaptive-threshold state machine + refractory + BPM bounds + rolling average (SIG-02..05)
 
 ### Phase 4: Full Integration + Analog Calibration
