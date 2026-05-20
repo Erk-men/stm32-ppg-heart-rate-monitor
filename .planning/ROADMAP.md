@@ -60,7 +60,10 @@ Plans:
   2. Serial output shows state machine transitions (IDLE → RISING → PEAK_HOLD → FALLING → REFRACTORY) making algorithm internals visible
   3. Dicrotic-notch double-counting does not occur: refractory period (300–400ms) suppresses any secondary peak within the same cycle
   4. BPM values outside 40–200 are silently rejected and do not corrupt the 5-reading rolling average
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 03-01-PLAN.md — Algorithm contract + SIG-01 moving average + synthetic sine table end-to-end slice
+- [ ] 03-02-PLAN.md — Adaptive-threshold state machine + refractory + BPM bounds + rolling average (SIG-02..05)
 
 ### Phase 4: Full Integration + Analog Calibration
 **Goal**: The live ADC sample stream replaces the synthetic sine table; the full firmware stack runs on real LM358 PPG signal; all threshold constants are empirically measured and locked in; stable BPM output is confirmed from a real finger
@@ -95,6 +98,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Firmware Scaffold + Peripheral Init | 0/2 | Planned | - |
 | 2. ADC + Timer Hardware Trigger | 0/2 | Planned | - |
-| 3. Algorithm Modules on Synthetic Data | 0/TBD | Not started | - |
+| 3. Algorithm Modules on Synthetic Data | 0/2 | Planned | - |
 | 4. Full Integration + Analog Calibration | 0/TBD | Not started | - |
 | 5. Report Evidence + Polish | 0/TBD | Not started | - |
