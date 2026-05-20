@@ -1,4 +1,4 @@
-#define DEBUG_STATE     /* print state transitions; remove for Phase 4 silent mode */
+/* #define DEBUG_STATE */  /* print state transitions; remove for Phase 4 silent mode */
 #include "systick.h"    /* millis() — peak interval timing */
 #include "usart.h"      /* uart_write_str, uart_write_u32 — output only */
 #include "algorithm.h"
@@ -15,7 +15,7 @@ static uint32_t  s_ma_sum  = 0;       /* running sum; uint32 avoids overflow (32
 
 typedef enum { IDLE, RISING, PEAK_HOLD, FALLING, REFRACTORY } peak_state_t;
 static peak_state_t s_state          = IDLE;
-static uint16_t     s_threshold      = 1200; /* initial ~60% of midpoint; updated after each peak */
+static uint16_t     s_threshold      = 1950; /* initial ~60% of midpoint; updated after each peak */
 static uint16_t     s_peak_val       = 0;    /* maximum filtered value seen in RISING */
 static uint32_t     s_refractory_start = 0;  /* millis() value when refractory began */
 
@@ -39,7 +39,7 @@ void algorithm_init(void)
 
     /* Reset peak detector state */
     s_state          = IDLE;
-    s_threshold      = 1200;
+    s_threshold      = 2150;
     s_peak_val       = 0;
     s_refractory_start = 0;
 
@@ -59,12 +59,12 @@ void algorithm_process(uint16_t sample)
 {
     /* SIG-01: 32-sample integer moving average
      * Index masked with 0x1F (= modulo 32) — no division, no branch. */
-    s_ma_sum -= s_ma_buf[s_ma_idx];
-    s_ma_buf[s_ma_idx] = sample;
-    s_ma_sum += sample;
-    s_ma_idx = (s_ma_idx + 1) & 0x1F;
-    uint16_t filtered = (uint16_t)(s_ma_sum >> 5);
-
+	uint16_t inv = (uint16_t)(4095u - sample);
+	s_ma_sum -= s_ma_buf[s_ma_idx];
+	s_ma_buf[s_ma_idx] = inv;
+	s_ma_sum += inv;
+	s_ma_idx = (s_ma_idx + 1) & 0x1F;
+	uint16_t filtered = (uint16_t)(s_ma_sum >> 5);
     /* SIG-02 + SIG-03: five-state adaptive-threshold peak detector with refractory */
     peak_state_t next_state = s_state;
 
@@ -99,8 +99,7 @@ void algorithm_process(uint16_t sample)
             /* --- Register the beat --- */
 
             /* SIG-02: update adaptive threshold = last_peak * 3 / 5 (integer multiply before divide) */
-            s_threshold = (uint16_t)((uint32_t)s_peak_val * 3 / 5);
-
+            s_threshold = 2150;
             /* SIG-03: record refractory start time to suppress dicrotic notch */
             s_refractory_start = now;
 
