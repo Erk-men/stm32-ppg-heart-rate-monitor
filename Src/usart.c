@@ -5,9 +5,9 @@
 /*
  * usart2_init — configure PA2/PA3 GPIO and USART2 for 115200 8N1 polling TX.
  *
- * STM32F070xB clock tree (system_stm32f0xx.c):
- *   SYSCLK = PCLK = 48 MHz (HSE 8MHz × PLL6, APB /1)
- *   BRR = 48 000 000 / 115 200 = 416.67 → 0x1A1 (417)
+ * STM32F070xB clock tree: SystemInit() is a stub — SYSCLK = 8 MHz HSI at reset.
+ *   BRR = 8 000 000 / 115 200 = 69.4 → 0x45 (69) for 115200 baud at 8 MHz.
+ *   When PLL is enabled in Phase 4+ (SYSCLK=48MHz), update BRR to 0x1A1 (417).
  *
  * PA2 (USART2_TX): MODER=10 (AF), AF1 in AFRL bits[11:8]
  * PA3 (USART2_RX): MODER=10 (AF), AF1 in AFRL bits[15:12]
@@ -39,7 +39,7 @@ void usart2_init(void)
     GPIOA->AFR[0] &= ~(0xFFUL << 8);
     GPIOA->AFR[0] |=  (0x11UL << 8);   /* AF1 for PA2, AF1 for PA3 */
 
-    /* 6. BRR = 0x45 (69) → 115200 baud at PCLK=8MHz */
+    /* 6. BRR = 0x45 (69) → 115200 baud at PCLK=8MHz HSI */
     USART2->BRR = 0x45;
 
     /* 7. Enable USART2 with TX (8N1 defaults, no RX enable, no interrupts) */
