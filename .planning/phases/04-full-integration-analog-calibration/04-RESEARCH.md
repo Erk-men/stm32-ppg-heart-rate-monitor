@@ -554,22 +554,25 @@ If PLL is desired for final accuracy (tighter baud rate), it should be a dedicat
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is the LM358 circuit already producing clean PPG signal, or is there still analog debugging needed?**
    - What we know: Phase 3 hardware commit `0b5f4be` says "BPM:60 stable, state transitions confirmed" — but this was with SYNTHETIC_TEST defined (synthetic table, not live ADC)
    - What's unclear: Whether the commit message reflects real LM358 ADC output or just the synthetic path on hardware
    - Recommendation: Phase 4 Plan 1 should include a smoke-test task: flash with CALIBRATION_MODE defined and SYNTHETIC_TEST removed, observe ADC output for 5 seconds. If amp > 0 and varies with finger, circuit is working. If amp = 0 or flat, analog debugging needed.
+   - **RESOLVED:** Plan 04-01 Task 3 is a blocking hardware checkpoint that runs CALIBRATION_MODE and records the real ADC amplitude. If amp=0 or flat, the task documents the analog debugging required before Plan 2 can proceed. This fully resolves the question at hardware-verify time.
 
 2. **Should DEBUG_STATE be controllable from main.c (like SYNTHETIC_TEST) or remain hardcoded in algorithm.c (current state)?**
    - What we know: Phase 3 CONTEXT.md D-04 says it persists through Phase 4. Currently `#define DEBUG_STATE` is on line 1 of algorithm.c.
    - What's unclear: Whether Phase 4 should clean this up
    - Recommendation: Leave as-is for Phase 4. Note as cleanup item for Phase 5.
+   - **RESOLVED:** Leave `#define DEBUG_STATE` hardcoded in algorithm.c for Phase 4 (Phase 3 D-04 decision honored). Moving it to main.c is deferred to Phase 5 cleanup. No Phase 4 plan touches this.
 
 3. **What serial capture tool should be used for the DEBUG_VERBOSE screenshot (report evidence)?**
    - What we know: OUT-04 requires "at least one threshold-crossing event visible in the capture" for the report
    - What's unclear: Whether STM32CubeIDE's built-in console or a separate terminal emulator (PuTTY, minicom) is available
    - Recommendation: Any 115200 baud terminal emulator works. Plan should specify capture format expected. PuTTY session log or STM32CubeIDE console copy-paste both suffice.
+   - **RESOLVED:** Any 115200 baud 8N1 terminal emulator is sufficient (PuTTY, minicom, or STM32CubeIDE built-in console). Plan 04-02 Task 3 specifies saving the session log or copy-pasting the threshold-crossing output for the Phase 5 report. No special tooling required.
 
 ---
 

@@ -77,7 +77,10 @@ Plans:
   4. `DEBUG_VERBOSE` serial output shows labeled `RAW / FILT / THR / AMP / STATE` fields; at least one threshold-crossing event is visible in the capture
 **Plans**: 2 plans
 Plans:
+**Wave 1**
 - [ ] 04-01-PLAN.md — Live ADC integration + CALIBRATION_MODE 5s startup measurement (OUT-01, OUT-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 04-02-PLAN.md — No-finger detection + threshold reset + DEBUG_VERBOSE per-sample dump (OUT-02, OUT-04)
 
 ### Phase 5: Report Evidence + Polish
