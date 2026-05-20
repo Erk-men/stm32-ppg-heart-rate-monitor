@@ -1,3 +1,4 @@
+#define DEBUG_STATE     /* print state transitions; remove for Phase 4 silent mode */
 #include "systick.h"    /* millis() — peak interval timing */
 #include "usart.h"      /* uart_write_str, uart_write_u32 — output only */
 #include "algorithm.h"
