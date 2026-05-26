@@ -7,3 +7,5 @@ Release/
 *.d
 *.o
 *.cyclo
+.planning/
+RAPOR.pdf
